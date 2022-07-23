@@ -1,0 +1,2 @@
+# Soonchunhyang_University_Notice_Crawling
+순천향대학교 공지사항 클롤링

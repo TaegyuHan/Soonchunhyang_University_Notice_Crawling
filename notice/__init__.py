@@ -11,6 +11,8 @@ class Crawlling:
     _REQUEST_HEADER = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36"
     }
+    PAGE_TEMP = 10
+    PAGE_START = 0
 
     def _request_get(self, url: str) -> requests.models.Response:
         """ request get 요청 """
@@ -34,8 +36,8 @@ class Crawlling:
         """ a tag 의 href 링크 얻기 """
         return tag["href"]
 
-    def _get_table_rows(self, url: str) -> list[tuple[str, str, str, ...]]:
-        """ 테이블 row 리스트 얻기 """
+    def _get_table_rows(self, url: str) -> tuple[str, str, str, ...]:
+        """ 테이블 row range """
         response = self._request_get(url)
 
         html = response.text
@@ -50,16 +52,17 @@ class Crawlling:
         td_date_list = list(map(lambda x: self._remove_span_tags(x), table.find_all("td", {"class": "date"})))
         td_hits_list = list(map(lambda x: self._remove_span_tags(x), table.find_all("td", {"class": "hits"})))
 
-        row_list = zip(
-            td_seq_list,
-            td_subject_list,
-            td_url_list,
-            td_writer_list,
-            td_date_list,
-            td_hits_list
-        )
-
-        return row_list
+        for idx in range(len(td_seq_list)):
+            if not td_seq_list[idx].isnumeric():
+                continue
+            yield (
+                td_seq_list[idx],
+                td_subject_list[idx],
+                td_url_list[idx],
+                td_writer_list[idx],
+                td_date_list[idx],
+                td_hits_list[idx]
+            )
 
     def _get_page_number(self, response: requests.models.Response) -> tuple[int, int]:
         """ (시작, 끝) 페이지 숫자 얻기 """
@@ -69,4 +72,4 @@ class Crawlling:
         url = a_tag["href"]
         querys = parse_qs(urlparse(url).query)
 
-        return 10, int(querys["pager.offset"][0])
+        return self.PAGE_START, int(querys["pager.offset"][0]) + self.PAGE_TEMP
